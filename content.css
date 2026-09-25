@@ -1,0 +1,714 @@
+/*
+  content.css — Styles injected into the chat page (ChatGPT, Claude, Gemini).
+
+  All selectors use #pb- or .pb- prefixes to avoid collisions with the
+  host site's own styles. We use glassmorphism (backdrop-filter + blur)
+  to blend naturally with each site's dark UI.
+
+  --pb-accent is set per-platform by content.js (green on ChatGPT, clay on
+  Claude, blue on Gemini) so the same stylesheet reads as "at home" on
+  every site. Python analogy: like a Jinja template variable filled in
+  per-request instead of three near-duplicate CSS files.
+*/
+
+
+/* ── CONTROLS WRAPPER ───────────────────────────────────────────────── */
+/* Positioned above the prompt form with absolute positioning.
+
+   Quick refresher on CSS `position`, since this whole file leans on it:
+     - `static` (the default) — the element just sits in normal document
+       flow; top/left/right/bottom do nothing.
+     - `relative` — still sits in normal flow, but top/left/right/bottom
+       now nudge it FROM WHERE IT WOULD OTHERWISE BE, AND (importantly)
+       it becomes a valid anchor for any `position: absolute` descendant.
+     - `absolute` — removed from normal flow entirely, and positioned
+       relative to its nearest ANCESTOR that has position `relative`,
+       `absolute`, `fixed`, or `sticky` (whichever is closest, walking up
+       the tree) — or relative to the whole page if there isn't one.
+     - `fixed` — positioned relative to the browser VIEWPORT instead of
+       any ancestor, full stop, ignoring scrolling and ignoring ancestors
+       — see the big comment on #pb-mode-menu below for why the dropdown
+       menu specifically needs this one instead of `absolute`.
+
+   #pb-controls below is `position: absolute`, which is why
+   content.js's tryInjectControls() makes sure to set the CONTAINER
+   (whatever element we injected into) to `position: relative` first —
+   without that, this element would end up positioned relative to some
+   much bigger, unrelated ancestor further up the page.                */
+
+#pb-controls {
+  position: absolute;
+  top: -46px;
+  right: 0;
+  z-index: 9999; /* stack above the chat site's own composer content */
+  animation: pb-fade-in 0.3s ease;
+  --pb-accent: #10a37f; /* fallback if content.js hasn't set one yet */
+}
+
+/* v0.5.1: everything that used to be two stacked rows (the split button,
+   then a separate favorites row underneath) is now ONE horizontal
+   toolbar — see content.js's createControls for the full rationale. This
+   is the only element #pb-controls actually contains now. */
+.pb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A thin vertical rule between the split button and the icon-button
+   group — the same visual job as shadcn/ui's <Separator orientation=
+   "vertical" /> inside a Toolbar: it tells the eye "these are two
+   related but distinct groups of controls," without needing a gap wide
+   enough to actually separate them spatially. */
+.pb-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+}
+
+/* Applied by content.js at injection time when the container sits too
+   close to the top of the viewport for the default "float above" position
+   to stay on-screen (small viewports, or a composer near the page top). */
+#pb-controls.pb-anchor-below {
+  top: auto;
+  bottom: -46px;
+}
+
+@keyframes pb-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ── SPLIT BUTTON (Improve + mode chevron) ──────────────────────────── */
+
+.pb-split {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 9px;
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+#pb-improve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, var(--pb-accent) 0%, color-mix(in srgb, var(--pb-accent) 80%, black) 100%);
+  color: #ffffff;
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.2s ease, transform 0.15s ease;
+}
+
+#pb-improve-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+#pb-improve-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+#pb-improve-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+#pb-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 9px;
+  background: color-mix(in srgb, var(--pb-accent) 70%, black);
+  color: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+#pb-mode-toggle:hover {
+  filter: brightness(1.15);
+}
+
+.pb-chevron {
+  font-size: 11px;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+/* Icon inside the main button */
+.pb-btn-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.pb-btn-text {
+  line-height: 1;
+}
+
+/* Loading spinner — rotates the mode icon while a request is in flight */
+#pb-improve-btn.pb-loading .pb-btn-icon {
+  display: inline-block;
+  animation: pb-spin 0.8s linear infinite;
+}
+
+@keyframes pb-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+
+/* ── MODE MENU ───────────────────────────────────────────────────────── */
+/* Dropdown listing every improvement mode; opened via the chevron.
+
+   This is a "portal": dropdown.js moves #pb-mode-menu onto <body> and
+   keeps it `position: fixed` at all times, with its top/left/max-height
+   computed in JS from the trigger's real getBoundingClientRect() (see
+   dropdown.js for the viewport-collision / flip-direction logic). That
+   means its position here is NOT relative to #pb-controls or to any
+   host-page container — nothing here is a hardcoded top/bottom, and no
+   ancestor's `overflow: hidden` can clip it.
+
+   The closed state uses visibility/opacity/pointer-events rather than
+   `display: none` or `[hidden]`, specifically so the menu's box keeps
+   real dimensions (scrollHeight, offsetWidth) that dropdown.js can
+   measure at any time — including right before it opens — without an
+   extra "make visible, measure, reposition" round trip.                */
+
+/* v0.5: these portal mechanics used to live on the #pb-mode-menu ID
+   selector specifically, back when the mode menu was the only portaled
+   dropdown in the extension. Now the favorites save/browse panels
+   (content.js's buildFavoriteSaveMenu/buildFavoriteBrowseMenu) are ALSO
+   portaled via the same pbCreateDropdown() (dropdown.js), and every menu
+   it manages gets the `.pb-menu-portal` class added automatically — so
+   the shared positioning/visibility mechanics move to that class, and
+   only the mode menu's OWN look (width, in the ID rule below) stays
+   scoped to #pb-mode-menu specifically. */
+.pb-menu-portal {
+  /* dropdown.js sets max-height (and reads offsetWidth) to fit exactly
+     within the computed viewport budget — border-box makes that budget
+     mean the TOTAL rendered box (padding + border included). Without
+     this, the default content-box sizing adds the padding/border back on
+     top of max-height and the menu overflows the viewport by that amount
+     — this was an actual measured bug (232px rendered vs. an 218px
+     budget on a 480px-tall viewport), not just a theoretical risk. */
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(30, 30, 34, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  /* max-height + overflow-y are also set inline by dropdown.js per-open
+     (they depend on available viewport space), these are just safe
+     defaults before the first measurement. */
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* Closed by default — see comment above for why this isn't display:none. */
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+
+  /* Sits on <body>, a sibling of the ENTIRE host page, so it needs to
+     outrank anything the host site itself might render on top (its own
+     modals, menus, tooltips). */
+  z-index: 2147483000;
+}
+
+#pb-mode-menu {
+  width: 240px;
+}
+
+.pb-menu-portal.pb-menu-open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* When flipped upward (not enough room below the trigger), drop the
+   translateY entrance offset's direction so it doesn't visually clash
+   with growing upward instead of downward. */
+.pb-menu-portal[data-pb-placement="top"] {
+  transform: translateY(4px);
+}
+.pb-menu-portal[data-pb-placement="top"].pb-menu-open {
+  transform: translateY(0);
+}
+
+.pb-mode-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #e5e7eb;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pb-mode-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pb-mode-item.pb-mode-active {
+  background: color-mix(in srgb, var(--pb-accent) 22%, transparent);
+}
+
+.pb-mode-icon {
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pb-mode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.pb-mode-text strong {
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.pb-mode-text small {
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 11px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* ── v0.5.1 — TOOLBAR ICON BUTTONS (context toggle, favorites) ────────── */
+/* One shared small-icon-button look, used for all three icons in the
+   toolbar's icon group (see content.js's buildToolbarIcons): the context
+   toggle, save-to-favorites, and browse-favorites. Having ONE class for
+   all three is what makes them read as a single cohesive control
+   cluster rather than three separately-designed buttons that happen to
+   sit next to each other. */
+
+.pb-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: rgba(20, 20, 24, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  color: #e5e7eb;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pb-icon-btn:hover {
+  background: color-mix(in srgb, var(--pb-accent) 30%, rgba(20, 20, 24, 0.9));
+  transform: translateY(-1px);
+}
+
+/* The context-toggle icon button ALSO carries `aria-pressed`, updated by
+   content.js's refreshModeUI(), so its "on" look is driven by a real
+   accessibility attribute rather than a bespoke class that could drift
+   out of sync with the actual state. */
+.pb-icon-btn[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--pb-accent) 45%, rgba(20, 20, 24, 0.9));
+  border-color: color-mix(in srgb, var(--pb-accent) 60%, transparent);
+  color: #fff;
+}
+
+.pb-fav-panel {
+  width: 300px;
+}
+
+/* Field labels inside the favorites save panel now share `.pb-field-label`
+   with the image tab's "Task"/"Target Platform" labels — see the
+   "UI STRUCTURE: TABS + SEGMENTED CONTROLS" section above for the
+   definition, kept in one place instead of two near-duplicates. */
+
+.pb-fav-title-row {
+  display: flex;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.pb-fav-title-input,
+.pb-fav-category-input,
+.pb-fav-tags-input,
+.pb-fav-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 9px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  color: #f3f4f6;
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 12px;
+}
+
+.pb-fav-title-input:focus,
+.pb-fav-category-input:focus,
+.pb-fav-tags-input:focus,
+.pb-fav-search-input:focus {
+  outline: none;
+  border-color: var(--pb-accent);
+}
+
+.pb-fav-category-input,
+.pb-fav-tags-input {
+  margin: 0 4px 2px;
+}
+
+.pb-fav-search-input {
+  margin: 0 0 6px;
+}
+
+.pb-fav-suggest-btn {
+  flex-shrink: 0;
+  width: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pb-fav-suggest-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pb-fav-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 4px 2px;
+}
+
+.pb-fav-cancel-btn,
+.pb-fav-save-btn {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.pb-fav-cancel-btn {
+  background: transparent;
+  color: #9ca3af;
+}
+
+.pb-fav-save-btn {
+  background: var(--pb-accent);
+  color: #fff;
+}
+
+/* ── Browse panel ── */
+
+.pb-fav-category-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 0 4px 6px;
+}
+
+.pb-fav-chip {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #d1d5db;
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pb-fav-chip-active {
+  background: color-mix(in srgb, var(--pb-accent) 35%, transparent);
+  border-color: var(--pb-accent);
+  color: #fff;
+}
+
+.pb-fav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.pb-fav-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  color: #e5e7eb;
+}
+
+.pb-fav-row-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pb-fav-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.pb-fav-row-main strong {
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 13px;
+  color: #f3f4f6;
+}
+
+.pb-fav-row-main small {
+  font-size: 11px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pb-fav-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pb-fav-badge {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pb-accent) 22%, transparent);
+  font-size: 10px;
+  color: #f3f4f6;
+  white-space: nowrap;
+}
+
+.pb-fav-delete-btn {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.pb-fav-delete-btn:hover {
+  opacity: 1;
+}
+
+.pb-fav-empty {
+  padding: 16px 8px;
+  text-align: center;
+  color: #9ca3af;
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 12px;
+}
+
+
+/* ── v0.5.1 — UI STRUCTURE: TABS + SEGMENTED CONTROLS ─────────────────── */
+/* The mode popover (#pb-mode-menu) used to be one flat list with a
+   divider before the image controls and another before the context
+   toggle. It's now a small Tabs component ("Text" / "Image") over two
+   panels, plus — inside the Image panel — two ToggleGroup-style
+   "segmented controls" for task and target platform. This is the part
+   most directly modeled on shadcn/ui's Tabs + ToggleGroup primitives:
+   same idea (a pill-shaped selector switching between panels, and a
+   connected row of equal-weight options standing in for a single choice)
+   reimplemented in plain CSS since a content script can't safely load
+   someone else's React+Tailwind runtime into an arbitrary host page. */
+
+.pb-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  margin: 0 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9px;
+}
+
+.pb-tab {
+  flex: 1;
+  padding: 6px 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pb-tab:hover {
+  color: #e5e7eb;
+}
+
+/* The SELECTED tab gets a solid pill — same "lifted" look
+   .pb-mode-item.pb-mode-active uses below, just via a real aria-selected
+   attribute (set by content.js's setActivePopoverTab) instead of a class,
+   so the accessibility state and the visual state can never drift apart. */
+.pb-tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--pb-accent) 55%, #1e1e22);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pb-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pb-field-label {
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 6px 4px 4px;
+}
+
+.pb-field-label:first-child {
+  margin-top: 2px;
+}
+
+/* A "segmented control": a connected row of equal-weight options acting
+   as one choice — shadcn/ui's ToggleGroup does the same job. Used for
+   the image task (2 options) and target platform (4 options, wrapped). */
+.pb-segmented {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  margin: 0 4px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9px;
+}
+
+.pb-segmented-wrap {
+  flex-wrap: wrap;
+}
+
+.pb-segmented-item {
+  flex: 1;
+  min-width: 40%; /* with .pb-segmented-wrap, this is what forces 4 items into a 2x2 grid instead of 4 cramped columns */
+  padding: 7px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #d1d5db;
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pb-segmented-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pb-segmented-item.pb-mode-active {
+  background: color-mix(in srgb, var(--pb-accent) 55%, #1e1e22);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+
+/* ── TOAST NOTIFICATIONS ────────────────────────────────────────────── */
+/* Slide-up from the bottom-right corner.  Three variants: success,    */
+/* error, and warning.                                                  */
+
+.pb-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-family: 'Söhne', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  z-index: 99999;
+  max-width: 380px;
+
+  /* Start invisible & shifted down */
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+  transition:
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Glassmorphism backdrop */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.pb-toast-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.pb-toast-success {
+  background: rgba(16, 163, 127, 0.92);
+  color: #ffffff;
+  border: 1px solid rgba(16, 163, 127, 0.4);
+}
+
+.pb-toast-error {
+  background: rgba(220, 38, 38, 0.92);
+  color: #ffffff;
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+.pb-toast-warning {
+  background: rgba(234, 179, 8, 0.92);
+  color: #1a1a1a;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}

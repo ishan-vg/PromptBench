@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "PromptBench",
+  "version": "0.5.0",
+  "description": "Improve your prompts on ChatGPT, Claude, and Gemini with AI-powered suggestions — now with favorites, conversation-aware rewrites, and an image-prompt mode.",
+
+  "permissions": ["storage"],
+
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*"
+  ],
+
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "PromptBench Settings"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*"
+      ],
+      "js": [
+        "modes.js",
+        "favorites.js",
+        "dropdown.js",
+        "inject-utils.js",
+        "platforms/chatgpt.js",
+        "platforms/claude.js",
+        "platforms/gemini.js",
+        "content.js"
+      ],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

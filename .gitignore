@@ -1,0 +1,9 @@
+# Old builds and drafts
+Claude outputs/
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
