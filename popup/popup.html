@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PromptBench Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="pb-popup">
+
+    <!-- Header -->
+    <header class="pb-header">
+      <div class="pb-logo">✨</div>
+      <div class="pb-header-text">
+        <h1>PromptBench</h1>
+        <p class="pb-subtitle">AI-Powered Prompt Improvement</p>
+      </div>
+    </header>
+
+    <div class="pb-divider"></div>
+
+    <!-- API Key -->
+    <section class="pb-section">
+      <label class="pb-label" for="pb-api-key">Gemini API Key</label>
+      <div class="pb-input-group">
+        <input
+          type="password"
+          id="pb-api-key"
+          class="pb-input"
+          placeholder="Paste your API key here"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button type="button" id="pb-toggle-key" class="pb-toggle-btn" title="Show / hide key">👁</button>
+      </div>
+      <p class="pb-help">
+        Get a free key at
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com</a>
+      </p>
+    </section>
+
+    <!-- Default Style -->
+    <section class="pb-section">
+      <label class="pb-label" for="pb-default-style">Default Improvement Mode</label>
+      <!-- Options are populated from modes.js by popup.js, so this list -->
+      <!-- always matches the modes offered on ChatGPT/Claude/Gemini.    -->
+      <select id="pb-default-style" class="pb-select"></select>
+    </section>
+
+    <!-- Save -->
+    <button type="button" id="pb-save" class="pb-save-btn">Save Settings</button>
+    <div id="pb-status" class="pb-status" aria-live="polite"></div>
+
+    <div class="pb-divider"></div>
+
+    <!-- v0.5 — Feature 2: thread-context toggle. Mirrors the on-page
+         toggle in the mode menu (content.js) — both read/write the same
+         'pbUseThreadContext' storage key, so flipping it here or on the
+         page keeps the other in sync. -->
+    <section class="pb-section">
+      <label class="pb-checkbox-row" for="pb-use-context">
+        <input type="checkbox" id="pb-use-context">
+        <span>
+          Use conversation history when improving prompts
+          <small>Sends the last few messages of your current chat to Gemini so rewrites stay consistent with what's already been discussed. Nothing is stored.</small>
+        </span>
+      </label>
+    </section>
+
+    <div class="pb-divider"></div>
+
+    <!-- v0.5 — Feature 1: favorites backup. Export/import operate on the
+         'pbFavorites' storage key directly via favorites.js's shared API
+         — the same functions the on-page favorites panel uses. -->
+    <section class="pb-section">
+      <label class="pb-label">Favorites Backup</label>
+      <div class="pb-backup-row">
+        <button type="button" id="pb-export-favorites" class="pb-secondary-btn">Export Favorites</button>
+        <button type="button" id="pb-import-favorites" class="pb-secondary-btn">Import Favorites</button>
+        <input type="file" id="pb-import-file-input" accept="application/json" hidden>
+      </div>
+      <p class="pb-help">Favorites are stored on this device only — export a backup before switching computers.</p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="pb-footer">
+      <p>v0.5.0</p>
+      <div class="pb-security-badge">🔒 Key stored locally · never sent to third parties</div>
+    </footer>
+
+  </div>
+  <script src="../modes.js"></script>
+  <script src="../favorites.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

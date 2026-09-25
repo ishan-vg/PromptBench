@@ -1,0 +1,310 @@
+/*
+  popup.css — Premium dark-theme settings panel.
+  Matches ChatGPT's aesthetic with deep blues, green accents,
+  and subtle glassmorphism effects.
+*/
+
+/* ── RESET ─────────────────────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ── BODY ──────────────────────────────────────────────────────────────── */
+body {
+  width: 380px;
+  min-height: 200px;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(160deg, #0f0f1a 0%, #1a1a2e 50%, #0f1923 100%);
+  color: #e0e0e0;
+}
+
+.pb-popup {
+  padding: 24px;
+}
+
+/* ── HEADER ────────────────────────────────────────────────────────────── */
+.pb-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.pb-logo {
+  font-size: 26px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(16, 163, 127, 0.2), rgba(16, 163, 127, 0.05));
+  border-radius: 14px;
+  border: 1px solid rgba(16, 163, 127, 0.25);
+  flex-shrink: 0;
+}
+
+.pb-header-text h1 {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #10a37f, #5ee7b5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pb-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+  letter-spacing: 0.2px;
+}
+
+/* ── DIVIDER ───────────────────────────────────────────────────────────── */
+.pb-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  margin-bottom: 22px;
+}
+
+/* ── SECTIONS ──────────────────────────────────────────────────────────── */
+.pb-section {
+  margin-bottom: 20px;
+}
+
+.pb-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* ── INPUT ──────────────────────────────────────────────────────────────── */
+.pb-input-group {
+  position: relative;
+  display: flex;
+}
+
+.pb-input {
+  flex: 1;
+  padding: 11px 44px 11px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #e0e0e0;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pb-input:focus {
+  border-color: #10a37f;
+  box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.12);
+}
+
+.pb-input::placeholder {
+  color: #4b5563;
+}
+
+.pb-toggle-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 16px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.pb-toggle-btn:hover {
+  color: #e0e0e0;
+}
+
+/* ── HELP TEXT ──────────────────────────────────────────────────────────── */
+.pb-help {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.pb-help a {
+  color: #10a37f;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.pb-help a:hover {
+  text-decoration: underline;
+}
+
+/* ── SELECT ────────────────────────────────────────────────────────────── */
+.pb-select {
+  width: 100%;
+  padding: 11px 36px 11px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #e0e0e0;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.pb-select:focus {
+  border-color: #10a37f;
+}
+
+.pb-select option {
+  background: #1a1a2e;
+  color: #e0e0e0;
+}
+
+/* ── SAVE BUTTON ───────────────────────────────────────────────────────── */
+.pb-save-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #10a37f, #0d8c6d);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+  letter-spacing: 0.3px;
+}
+
+.pb-save-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 163, 127, 0.3);
+}
+
+.pb-save-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pb-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── STATUS MESSAGE ────────────────────────────────────────────────────── */
+.pb-status {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 12px;
+  min-height: 20px;
+  transition: opacity 0.3s ease;
+}
+
+.pb-status-success {
+  color: #10a37f;
+}
+
+.pb-status-error {
+  color: #ef4444;
+}
+
+/* ── FOOTER ────────────────────────────────────────────────────────────── */
+.pb-footer {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.pb-footer p {
+  font-size: 11px;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.pb-security-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  background: rgba(16, 163, 127, 0.08);
+  border: 1px solid rgba(16, 163, 127, 0.15);
+  border-radius: 20px;
+  font-size: 11px;
+  color: #10a37f;
+  letter-spacing: 0.2px;
+}
+
+/* ── v0.5 — FEATURE 2: CONTEXT TOGGLE CHECKBOX ────────────────────────── */
+.pb-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.pb-checkbox-row input[type="checkbox"] {
+  margin-top: 3px;
+  width: 15px;
+  height: 15px;
+  accent-color: #10a37f;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pb-checkbox-row span {
+  font-size: 13px;
+  color: #e0e0e0;
+  line-height: 1.4;
+}
+
+.pb-checkbox-row small {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 3px;
+  font-weight: 400;
+}
+
+/* ── v0.5 — FEATURE 1: FAVORITES BACKUP BUTTONS ───────────────────────── */
+.pb-backup-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pb-secondary-btn {
+  flex: 1;
+  padding: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.pb-secondary-btn:hover {
+  background: rgba(16, 163, 127, 0.12);
+  border-color: rgba(16, 163, 127, 0.3);
+}
